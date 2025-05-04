@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Website Chatbot with Image Gallery</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+            background-color: #f8f9fa;
+        }
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .chat-container {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 1em;
+            margin-bottom: 1em;
+            background-color: #f9f9f9;
+        }
+        .user-message {
+            background-color: #dcf8c6;
+            border-radius: 10px;
+            padding: 10px;
+            margin: 5px 0;
+            max-width: 80%;
+            align-self: flex-end;
+            margin-left: auto;
+        }
+        .bot-message {
+            background-color: #e5e5ea;
+            border-radius: 10px;
+            padding: 10px;
+            margin: 5px 0;
+            max-width: 80%;
+            align-self: flex-start;
+        }
+        .message-container {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px;
+        }
+        #loadingIndicator, #galleryLoadingIndicator {
+            display: none;
+        }
+        
+        /* Tabs Styling */
+        .nav-tabs .nav-link {
+            border-radius: 0.5rem 0.5rem 0 0;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+        }
+        .nav-tabs .nav-link.active {
+            background-color: #fff;
+            border-bottom-color: #fff;
+        }
+        
+        /* Image Grid Styling */
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+            padding: 1rem 0;
+        }
+        .image-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            background-color: #fff;
+        }
+        .image-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .image-container {
+            height: 200px;
+            overflow: hidden;
+            position: relative;
+        }
+        .image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .image-info {
+            padding: 1rem;
+            background-color: #f8f9fa;
+        }
+        .placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            background-color: #e9ecef;
+            color: #6c757d;
+        }
+        .btn-action {
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+        .no-images {
+            text-align: center;
+            padding: 2rem;
+            font-size: 1.2rem;
+            color: #6c757d;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        /* Card enhancements */
+        .card {
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            padding: 1rem 1.5rem;
+        }
+        .card-header h2 {
+            margin-bottom: 0;
+            font-size: 1.5rem;
+        }
+        
+        /* Stats counter */
+        .stats-container {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .stat-card {
+            flex: 1;
+            padding: 1rem;
+            border-radius: 8px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #0d6efd;
+        }
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .image-grid {
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container main-container">
+        <h1 class="text-center mb-4">RAG Website Chatbot with Image Gallery</h1>
+        
+        <!-- Website Indexing Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h2><i class="fas fa-spider"></i> Index a Website</h2>
+            </div>
+            <div class="card-body">
+                <form id="indexForm">
+                    <div class="mb-3">
+                        <label for="websiteUrl" class="form-label">Website URL</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-link"></i></span>
+                            <input type="url" class="form-control" id="websiteUrl" required 
+                                   placeholder="https://example.com">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="maxDepth" class="form-label">Max Depth</label>
+                            <input type="number" class="form-control" id="maxDepth" min="1" max="5" value="2">
+                            <div class="form-text">How deep to crawl from the homepage</div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="maxPages" class="form-label">Max Pages</label>
+                            <input type="number" class="form-control" id="maxPages" min="1" max="200" value="50">
+                            <div class="form-text">Maximum number of pages to index</div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="includeImages" class="form-label">Include Images</label>
+                            <select class="form-select" id="includeImages">
+                                <option value="true" selected>Yes</option>
+                                <option value="false">No</option>
+                            </select>
+                            <div class="form-text">Extract images from the website</div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Index Website
+                    </button>
+                    <div class="spinner-border text-primary mt-2" role="status" id="indexingSpinner" style="display: none;">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <div class="alert alert-info mt-2" id="indexingStatus" style="display: none;"></div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Collection Selection -->
+        <div class="mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-database"></i> Website Collections</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-end">
+                        <div class="col-md-8">
+                            <label for="collectionSelect" class="form-label">Select a website collection</label>
+                            <select class="form-select" id="collectionSelect">
+                                <option value="">Select a website collection</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="button" class="btn btn-danger mb-0" id="deleteCollectionBtn">
+                                <i class="fas fa-trash"></i> Delete Collection
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Collection Stats -->
+                    <div class="stats-container mt-4" id="collectionStats" style="display: none;">
+                        <div class="stat-card">
+                            <div class="stat-number" id="pagesCount">0</div>
+                            <div class="stat-label">Pages</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="imagesCount">0</div>
+                            <div class="stat-label">Images</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="contentSize">0</div>
+                            <div class="stat-label">Content Size</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Chat and Images Section -->
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" id="contentTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="chat-tab" data-bs-toggle="tab" data-bs-target="#chat-content" 
+                                type="button" role="tab" aria-controls="chat-content" aria-selected="true">
+                            <i class="fas fa-comments"></i> Chat
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="images-tab" data-bs-toggle="tab" data-bs-target="#images-content" 
+                                type="button" role="tab" aria-controls="images-content" aria-selected="false">
+                            <i class="fas fa-images"></i> Images
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content" id="contentTabsContent">
+                    <!-- Chat Content -->
+                    <div class="tab-pane fade show active" id="chat-content" role="tabpanel" aria-labelledby="chat-tab">
+                        <div class="chat-container" id="chatMessages"></div>
+                        <form id="chatForm">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="userQuestion" 
+                                       placeholder="Ask about the website..." required>
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="fas fa-paper-plane"></i> Send
+                                </button>
+                            </div>
+                            <div class="spinner-border text-primary mt-2" role="status" id="loadingIndicator">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Images Content -->
+                    <div class="tab-pane fade" id="images-content" role="tabpanel" aria-labelledby="images-tab">
+                        <div class="mb-3">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="imageSearch" 
+                                       placeholder="Search images by alt text...">
+                                <button class="btn btn-primary" id="searchImagesBtn">
+                                    <i class="fas fa-search"></i> Search
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="spinner-border text-primary" role="status" id="galleryLoadingIndicator">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        
+                        <div id="imageGallery">
+                            <div class="no-images">
+                                <p>Select a collection to view images</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="imageModalLabel">Image Preview</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center" id="modalImageContainer">
+                    <!-- Image will be inserted here -->
+                </div>
+                <div class="modal-footer">
+                    <div class="w-100" id="modalImageInfo">
+                        <!-- Image info will be inserted here -->
+                    </div>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <a href="#" class="btn btn-primary" id="modalDownloadBtn" download target="_blank">Download</a>
+                    <a href="#" class="btn btn-info" id="modalSourceBtn" target="_blank">View Source Page</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables
+        let currentCollection = null;
+        
+        // Load collections on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadCollections();
+            
+            // Set up event listeners for tab switching
+            document.querySelector('#images-tab').addEventListener('click', function() {
+                if (currentCollection) {
+                    loadImagesForCollection(currentCollection);
+                }
+            });
+            
+            // Set up search button
+            document.querySelector('#searchImagesBtn').addEventListener('click', function() {
+                if (currentCollection) {
+                    const searchTerm = document.querySelector('#imageSearch').value;
+                    loadImagesForCollection(currentCollection, searchTerm);
+                }
+            });
+            
+            // Set up delete collection button
+            document.querySelector('#deleteCollectionBtn').addEventListener('click', function() {
+                if (currentCollection) {
+                    deleteCollection(currentCollection);
+                } else {
+                    alert('Please select a collection first');
+                }
+            });
+            
+            // Set up collection change listener
+            document.querySelector('#collectionSelect').addEventListener('change', function() {
+                currentCollection = this.value;
+                if (currentCollection) {
+                    loadCollectionStats(currentCollection);
+                    
+                    // Load images if we're on the images tab
+                    if (document.querySelector('#images-tab').classList.contains('active')) {
+                        loadImagesForCollection(currentCollection);
+                    }
+                } else {
+                    document.querySelector('#collectionStats').style.display = 'none';
+                    document.querySelector('#imageGallery').innerHTML = `
+                        <div class="no-images">
+                            <p>Select a collection to view images</p>
+                        </div>
+                    `;
+                }
+            });
+        });
+
+        // Load indexed collections
+        async function loadCollections() {
+            try {
+                const response = await fetch('/collections');
+                const collections = await response.json();
+                
+                const collectionSelect = document.getElementById('collectionSelect');
+                // Clear existing options
+                collectionSelect.innerHTML = '<option value="">Select a website collection</option>';
+                
+                if (collections.length === 0) {
+                    const option = document.createElement('option');
+                    option.text = 'No collections available';
+                    option.disabled = true;
+                    collectionSelect.add(option);
+                } else {
+                    collections.forEach(collection => {
+                        const option = document.createElement('option');
+                        option.value = collection;
+                        option.text = collection;
+                        collectionSelect.add(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading collections:', error);
+            }
+        }
+        
+        // Load collection statistics
+        async function loadCollectionStats(collectionName) {
+            try {
+                const response = await fetch(`/collection-stats/${collectionName}`);
+                const stats = await response.json();
+                
+                document.querySelector('#pagesCount').textContent = stats.pages_count || 0;
+                document.querySelector('#imagesCount').textContent = stats.images_count || 0;
+                document.querySelector('#contentSize').textContent = formatBytes(stats.content_size || 0);
+                document.querySelector('#collectionStats').style.display = 'flex';
+            } catch (error) {
+                console.error('Error loading collection stats:', error);
+                document.querySelector('#collectionStats').style.display = 'none';
+            }
+        }
+        
+        // Format bytes to human-readable format
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        // Delete a collection
+        async function deleteCollection(collectionName) {
+            if (!confirm(`Are you sure you want to delete the collection "${collectionName}"? This action cannot be undone.`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/collection/${collectionName}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    alert(`Collection "${collectionName}" has been deleted.`);
+                    currentCollection = null;
+                    await loadCollections();
+                    document.querySelector('#collectionStats').style.display = 'none';
+                    document.querySelector('#imageGallery').innerHTML = `
+                        <div class="no-images">
+                            <p>Select a collection to view images</p>
+                        </div>
+                    `;
+                } else {
+                    const error = await response.json();
+                    alert(`Error: ${error.detail || 'Failed to delete collection'}`);
+                }
+            } catch (error) {
+                console.error('Error deleting collection:', error);
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        // Handle website indexing
+        document.getElementById('indexForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const url = document.getElementById('websiteUrl').value;
+            const maxDepth = document.getElementById('maxDepth').value;
+            const maxPages = document.getElementById('maxPages').value;
+            const includeImages = document.getElementById('includeImages').value === 'true';
+            
+            const spinner = document.getElementById('indexingSpinner');
+            const statusDiv = document.getElementById('indexingStatus');
+            
+            spinner.style.display = 'inline-block';
+            statusDiv.style.display = 'block';
+            statusDiv.textContent = 'Indexing website... This may take a few minutes.';
+            statusDiv.className = 'alert alert-info mt-2';
+            
+            try {
+                const response = await fetch('/index', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        url: url,
+                        max_depth: parseInt(maxDepth),
+                        max_pages: parseInt(maxPages),
+                        include_images: includeImages
+                    }),
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    statusDiv.className = 'alert alert-success mt-2';
+                    let successMessage = `Success! Indexed ${result.document_count} pages from ${url}`;
+                    if (includeImages && result.image_count) {
+                        successMessage += ` and extracted ${result.image_count} images`;
+                    }
+                    statusDiv.textContent = successMessage;
+                    
+                    // Reload collections
+                    await loadCollections();
+                    
+                    // Select the new collection
+                    const collectionSelect = document.getElementById('collectionSelect');
+                    const domain = new URL(url).hostname;
+                    for (let i = 0; i < collectionSelect.options.length; i++) {
+                        if (collectionSelect.options[i].value.includes(domain)) {
+                            collectionSelect.selectedIndex = i;
+                            currentCollection = collectionSelect.value;
+                            loadCollectionStats(currentCollection);
+                            break;
+                        }
+                    }
+                } else {
+                    statusDiv.className = 'alert alert-danger mt-2';
+                    statusDiv.textContent = `Error: ${result.detail || 'Failed to index website'}`;
+                }
+            } catch (error) {
+                statusDiv.className = 'alert alert-danger mt-2';
+                statusDiv.textContent = `Error: ${error.message}`;
+            } finally {
+                spinner.style.display = 'none';
+            }
+        });
+
+        // Handle chat form submission
+        document.getElementById('chatForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!currentCollection) {
+                alert('Please select a website collection first.');
+                return;
+            }
+            
+            const userQuestion = document.getElementById('userQuestion').value;
+            
+            // Add user message to chat
+            addMessage(userQuestion, 'user');
+            
+            // Clear input
+            document.getElementById('userQuestion').value = '';
+            
+            // Show loading indicator
+            document.getElementById('loadingIndicator').style.display = 'inline-block';
+            
+            try {
+                const response = await fetch('/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        query: userQuestion,
+                        collection_name: currentCollection
+                    }),
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    // Add bot message to chat
+                    addMessage(result.response, 'bot');
+                } else {
+                    // Add error message
+                    addMessage(`Error: ${result.detail || 'Failed to get response'}`, 'bot');
+                }
+            } catch (error) {
+                addMessage(`Error: ${error.message}`, 'bot');
+            } finally {
+                // Hide loading indicator
+                document.getElementById('loadingIndicator').style.display = 'none';
+            }
+        });
+
+        // Add message to chat
+        function addMessage(message, sender) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageContainer = document.createElement('div');
+            messageContainer.className = 'message-container';
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = sender === 'user' ? 'user-message' : 'bot-message';
+            messageDiv.textContent = message;
+            
+            messageContainer.appendChild(messageDiv);
+            chatMessages.appendChild(messageContainer);
+            
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Load images for a collection
+        async function loadImagesForCollection(collectionName, searchTerm = '') {
+            const galleryDiv = document.getElementById('imageGallery');
+            const loadingIndicator = document.getElementById('galleryLoadingIndicator');
+            
+            loadingIndicator.style.display = 'inline-block';
+            
+            try {
+                let url = `/images/${collectionName}`;
+                if (searchTerm) {
+                    url += `?search=${encodeURIComponent(searchTerm)}`;
+                }
+                
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                if (response.ok) {
+                    if (result.images.length === 0) {
+                        galleryDiv.innerHTML = `
+                            <div class="no-images">
+                                <p>No images found in this collection${searchTerm ? ' matching your search' : ''}.</p>
+                            </div>
+                        `;
+                    } else {
+                        galleryDiv.innerHTML = `
+                            <p>Found ${result.count} images${searchTerm ? ' matching your search' : ''}</p>
+                            <div class="image-grid" id="imageGrid"></div>
+                        `;
+                        
+                        const imageGrid = document.getElementById('imageGrid');
+                        
+                        result.images.forEach(image => {
+                            const card = document.createElement('div');
+                            card.className = 'image-card';
+                            
+                            const imageHTML = image.url
+                                ? `<img src="${image.url}" alt="${image.alt || 'Image'}" loading="lazy">`
+                                : `<div class="placeholder">Image not available</div>`;
+                            
+                            card.innerHTML = `
+                                <div class="image-container">
+                                    ${imageHTML}
+                                </div>
+                                <div class="image-info">
+                                    <h5 class="card-title">${truncateText(image.alt || 'Image', 40)}</h5>
+                                    <p class="card-text small text-muted">${image.dimensions || 'Unknown dimensions'}</p>
+                                    <button class="btn btn-primary btn-action view-image-btn">
+                                        <i class="fas fa-search-plus"></i> View
+                                    </button>
+                                </div>
+                            `;
+                            
+                            // Add click event to view image in modal
+                            card.querySelector('.view-image-btn').addEventListener('click', () => {
+                                openImageModal(image);
+                            });
+                            
+                            imageGrid.appendChild(card);
+                        });
+                    }
+                } else {
+                    galleryDiv.innerHTML = `
+                        <div class="no-images">
+                            <p>Error: ${result.detail || 'Failed to load images'}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading images:', error);
+                galleryDiv.innerHTML = `
+                    <div class="no-images">
+                        <p>Error: ${error.message}</p>
+                    </div>
+                `;
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+        
+        // Open image in modal
+        function openImageModal(image) {
+            const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+            const modalTitle = document.getElementById('imageModalLabel');
+            const modalImageContainer = document.getElementById('modalImageContainer');
+            const modalImageInfo = document.getElementById('modalImageInfo');
+            const modalDownloadBtn = document.getElementById('modalDownloadBtn');
+            const modalSourceBtn = document.getElementById('modalSourceBtn');
+            
+            modalTitle.textContent = image.alt || 'Image Preview';
+            
+            if (image.url) {
+                modalImageContainer.innerHTML = `<img src="${image.url}" class="img-fluid" alt="${image.alt || 'Image'}">`;
+                modalDownloadBtn.href = image.url;
+                modalDownloadBtn.style.display = 'inline-block';
+            } else {
+                modalImageContainer.innerHTML = `<div class="placeholder p-5">Image not available</div>`;
+                modalDownloadBtn.style.display = 'none';
+            }
+            
+            modalImageInfo.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Dimensions:</strong> ${image.dimensions || 'Unknown'}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Source:</strong> ${new URL(image.page_url).hostname}</p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <p><strong>Alt Text:</strong> ${image.alt || 'None'}</p>
+                    </div>
+                </div>
+            `;
+            
+            modalSourceBtn.href = image.page_url;
+            
+            modal.show();
+        }
+        
+        // Truncate text with ellipsis
+        function truncateText(text, maxLength) {
+            if (!text) return '';
+            return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+        }
+    </script>
+</body>
+</html>

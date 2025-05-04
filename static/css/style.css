@@ -1,0 +1,127 @@
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --primary-color: #3b82f6;
+        --primary-dark: #2563eb;
+        --secondary-color: #94a3b8;
+        --background-color: #1e293b;
+        --surface-color: #334155;
+        --text-color: #f8fafc;
+        --text-muted: #cbd5e1;
+        --border-color: #475569;
+    }
+    
+    .markdown-content code {
+        background-color: #1e293b;
+    }
+    
+    .markdown-content pre {
+        background-color: #1e293b;
+    }
+}
+
+/* Improved Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--background-color);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--secondary-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-color);
+}
+
+/* Enhanced Button Animations */
+.action-button, .primary-button, .send-btn {
+    transition: all 0.2s ease-in-out;
+}
+
+.action-button:hover, .primary-button:hover, .send-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.action-button:active, .primary-button:active, .send-btn:active {
+    transform: translateY(0);
+}
+
+/* Message Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.message {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Better Focus States */
+button:focus, input:focus, select:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* Improved Chat UI */
+.chat-messages {
+    padding: 1.5rem;
+    gap: 1.5rem;
+}
+
+.message-content {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.user-message .message-content {
+    border-radius: 1.25rem 1.25rem 0 1.25rem;
+    background-image: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+}
+
+.bot-message .message-content {
+    border-radius: 1.25rem 1.25rem 1.25rem 0;
+}
+
+/* Loading Animation */
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.typing-indicator span {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background-color: var(--text-muted);
+    border-radius: 50%;
+    animation: bounce 1.2s infinite ease-in-out;
+}
+
+.typing-indicator span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+    0%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-6px); }
+}
+
+/* Website List Improvements */
+.website-item {
+    transition: all 0.2s ease;
+}
+
+.website-item:hover {
+    transform: translateX(3px);
+}

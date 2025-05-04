@@ -42,44 +42,5 @@ A Retrieval-Augmented Generation (RAG) chatbot that can **scrape any website rec
 | HTML Parsing    | lxml, html5lib         |
 
 
----
 
-## 📁 Folder Structure
-
-├── .env # Environment variables (API keys, etc.)
-├── .gitignore
-├── app.log # Optional log file
-├── app.py # Alternate FastAPI app file (if used)
-├── main.py # Main FastAPI app entry point
-├── requirements.txt # Project dependencies
-
-├── chroma_db/ # ChromaDB vector storage
-│ └── chroma.sqlite3
-
-├── qdrant_db/ # Qdrant metadata store
-│ ├── .lock
-│ ├── meta.json
-│ └── collection/ # Vector metadata collections
-
-├── src/ # Core logic modules
-│ ├── gemini_client.py # Gemini API integration
-│ ├── qdrant_store.py # Qdrant indexing and retrieval
-│ ├── rag_engine.py # RAG query pipeline
-│ ├── scraper.py # Recursive web scraper
-│ ├── vectorstore.py # ChromaDB vector store wrapper
-│ ├── init.py
-│ └── pycache/
-
-├── static/ # Static frontend assets (optional)
-│ ├── css/
-│ │ └── style.css
-│ └── js/
-│ └── main.js
-
-│
-├───templates
-│       images.html
-│       index.html
-│
-└───__pycache__
 

@@ -17,3 +17,4 @@ tiktoken
 qdrant-client
 typing-extensions
 asyncio
+gunicorn

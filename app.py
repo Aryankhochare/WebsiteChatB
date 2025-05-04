@@ -240,7 +240,6 @@ async def delete_collection(collection_name: str):
         logger.error(f"Error deleting collection: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error deleting collection: {str(e)}")
 
-from fastapi.responses import JSONResponse
 
 @app.get("/images/{collection_name}")
 async def view_collection_images(collection_name: str, limit: int = Query(20, ge=1, le=100)):

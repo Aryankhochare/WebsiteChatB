@@ -3,7 +3,6 @@ RAG Engine that combines scraping, vector storage, metadata storage, and LLM gen
 Provides a unified interface for the RAG pipeline with enhanced image handling.
 """
 
-import os
 import logging
 from typing import List, Dict, Optional, Any, Tuple, Union
 from urllib.parse import urlparse

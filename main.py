@@ -6,6 +6,7 @@ import os
 import logging
 import uvicorn
 from dotenv import load_dotenv
+from fastapi import FastAPI
 
 # Configure logging
 logging.basicConfig(
@@ -41,3 +42,10 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+app = FastAPI()
+
+@app.get("/")
+def read_root():
+    return {"message": "Hello from RAG Chatbot!"}

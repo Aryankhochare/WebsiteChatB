@@ -1,5 +1,5 @@
 """
-Qdrant metadata store module for storing and retrieving rich metadata.
+Qdrant metadata store module for storing and retrieving metadata.
 Complements the vector store by handling structured metadata like images.
 """
 
